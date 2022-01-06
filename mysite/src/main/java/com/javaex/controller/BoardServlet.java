@@ -55,10 +55,14 @@ public class BoardServlet extends HttpServlet {
 		else if("read".equals(actionName)) {
 			//게시물 가져오기
 			int no = Integer.parseInt(request.getParameter("no"));
+			int inc = Integer.parseInt(request.getParameter("inc"));
 			BoardDao dao = new BoardDaoImpl();
 			BoardVo vo = dao.read(no);
 			System.out.println("read() vo  : " + vo);
 			request.setAttribute("vo", vo);
+			if(inc == 1) {
+				dao.increase(no);
+			}
 			WebUtil.forward(request, response, "/WEB-INF/views/board/read.jsp");
 		}else if("modifyForm".equals(actionName)) {
 			int no = Integer.parseInt(request.getParameter("no"));

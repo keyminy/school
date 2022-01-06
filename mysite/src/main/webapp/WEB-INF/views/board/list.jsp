@@ -6,6 +6,12 @@
 <html>
 <head>
 	<title>mysite</title>
+	<style type="text/css">
+		.dataRow:hover {
+			background: #eee;
+			cursor: pointer;
+		}
+	</style>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 	<link href="/mysite/assets/css/board.css" rel="stylesheet" type="text/css">
 </head>
@@ -16,9 +22,18 @@
 		
 		<div id="content">
 			<div id="board">
-				<form id="search_form" action="/mysite/board" method="post">
-					<input type="hidden" name="a" value="search" />
-					<input type="text" id="kwd" name="kwd" value="${kwd}">
+				<form id="search_form" action="/mysite/board" method="get">
+					<!-- page정보를 hidden태그로 보내주기 -->
+					<input type="hidden" name="a" value="list" />
+					<input type="hidden" name="page" value="1" />
+					<input type="hidden" name="perPageNum" value="${pageObject.perPageNum}" />
+					<select name="key">
+						<option value="title"  ${(pageObject.key == "title")?"selected":"" }>제목</option>
+						<option value="content"  ${(pageObject.key == "content")?"selected":"" }>내용</option>
+						<option value="name" ${(pageObject.key == "name")?"selected":"" }>작성자</option>
+						<option value="reg_date" ${(pageObject.key == "reg_date")?"selected":"" }>작성일</option>
+					</select>
+					<input type="text" id="word" name="word" value="${param.word}">
 					<input type="submit" value="찾기">
 				</form>
 				<table class="tbl-ex">
@@ -42,9 +57,9 @@
 			      <!-- list 데이터가 있을때 출력 -->
 			      <c:if test="${!empty list}">
 			      	<c:forEach items="${list}" var="vo">
-						<tr class = "RowHover">
+						<tr class = "dataRow">
 							<td>${vo.no}</td>
-							<td><a href="/mysite/board?a=read&no=${ vo.no}">${vo.title}</a></td>
+							<td><a href="/mysite/board?a=read&no=${vo.no}&inc=1">${vo.title}</a></td>
 							<td>${vo.name}</td>
 							<td>${vo.hit}</td>
 							<td>${vo.reg_date}</td>
@@ -62,7 +77,7 @@
 					<ul class="pagination">
 						<li data-page=1>
 							<c:if test="${pageObject.page>1}">
-								<a href="/mysite/board?a=list&page=1&perPageNum=${pageObject.perPageNum}">
+								<a href="/mysite/board?a=list&page=1&perPageNum=${pageObject.perPageNum}&key=${pageObject.key }&word=${pageObject.word }">
 									◀◀
 								</a>
 							</c:if>
@@ -75,7 +90,7 @@
 						
 						<li data-page="${pageObject.startPage-1}">
 							<c:if test="${pageObject.startPage>1}">
-								<a href="/mysite/board?a=list&page=${pageObject.startPage-1}&perPageNum=${pageObject.perPageNum}">
+								<a href="/mysite/board?a=list&page=${pageObject.startPage-1}&perPageNum=${pageObject.perPageNum}&key=${pageObject.key }&word=${pageObject.word }">
 									◀
 								</a>
 							</c:if>
@@ -96,7 +111,7 @@
 								</c:if>
 								<!-- 페이지와 cnt가 같지않으면 링크가 있음 -->
 								<c:if test="${pageObject.page!=cnt}">
-									<a href="/mysite/board?a=list&page=${cnt}&perPageNum=${pageObject.perPageNum}">
+									<a href="/mysite/board?a=list&page=${cnt}&perPageNum=${pageObject.perPageNum}&key=${pageObject.key }&word=${pageObject.word }">
 										${cnt}
 									</a>
 								</c:if>
@@ -105,7 +120,7 @@
 						<!-- ▶부분 -->
 						<c:if test="${pageObject.endPage<pageObject.totalPage}">
 							<li data-page="${pageObject.endPage+1}">
-								<a href="/mysite/board?a=list&page=${pageObject.endPage+1}&perPageNum=${pageObject.perPageNum}">
+								<a href="/mysite/board?a=list&page=${pageObject.endPage+1}&perPageNum=${pageObject.perPageNum}&key=${pageObject.key }&word=${pageObject.word }">
 									▶
 								</a>
 							</li>
@@ -120,7 +135,7 @@
 						<!--▶▶부분  -->
 						<c:if test="${pageObject.page<pageObject.totalPage}">
 							<li data-page="${pageObject.totalPage}">
-								<a href="/mysite/board?a=list&page=${pageObject.totalPage}&perPageNum=${pageObject.perPageNum}">
+								<a href="/mysite/board?a=list&page=${pageObject.totalPage}&perPageNum=${pageObject.perPageNum}&key=${pageObject.key }&word=${pageObject.word }">
 									▶▶
 								</a>
 							</li>

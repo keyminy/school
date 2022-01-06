@@ -2,7 +2,6 @@ package com.javaex.dao;
 
 import java.sql.Connection;
 
-
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,14 +49,33 @@ public class BoardDaoImpl implements BoardDao {
 			query += "SELECT b.no,b.title,u.name,b.hit,b.reg_date,b.user_no ";
 			query += "FROM board b,users u ";
 			query += "WHERE b.user_no=u.no ";
+			//조회 쿼리 추가
+			//query += "AND ? LIKE '%'|| ? ||'%' ";
+			if(pageObject.getWord()!=null&&!"".equals(pageObject.getWord())) {
+				//날짜 검색일떄
+				if("reg_date".equals(pageObject.getKey())) {
+					query += "AND "+"to_char(reg_date,'YYYY-MM-DD')"+" LIKE '%'||?||'%' ";		
+				}else {
+					//날짜 검색이 아닐때
+					query += "AND "+pageObject.getKey()+" LIKE '%'||?||'%' ";									
+				}
+			}
 			query += "ORDER BY no DESC ";
 			query += ") ";
 			query += ") ";
 			query += "WHERE rnum BETWEEN ? AND ? ";	
 			System.out.println("BoardDAO.list().sql - " + query);
+			System.out.println("pageObject getkey() : " + pageObject.getKey());
+			System.out.println("pageObject.getWord() : " + pageObject.getWord());
 			pstmt = conn.prepareStatement(query);
-			pstmt.setLong(1, pageObject.getStartRow()); // 시작 번호 - 1 :1페이지 정보
-			pstmt.setLong(2, pageObject.getEndRow()); // 끝 번호 - 10 : 1페이지 정보
+			if(pageObject.getWord()!=null&&!"".equals(pageObject.getWord())) {
+				pstmt.setString(1, pageObject.getWord()); 
+				pstmt.setLong(2, pageObject.getStartRow()); // 시작 번호 - 1 :1페이지 정보
+				pstmt.setLong(3, pageObject.getEndRow()); // 끝 번호 - 10 : 1페이지 정보	
+			}else {
+				pstmt.setLong(1, pageObject.getStartRow()); // 시작 번호 - 1 :1페이지 정보
+				pstmt.setLong(2, pageObject.getEndRow()); // 끝 번호 - 10 : 1페이지 정보	
+			}
 			rs = pstmt.executeQuery();
 			// 4.결과처리
 			while (rs.next()) {
@@ -288,11 +306,17 @@ public class BoardDaoImpl implements BoardDao {
 		try {
 			conn = getConnection();
 			// 3. SQL문 준비 / 바인딩 / 실행
-			String query = "SELECT COUNT(*) FROM board";
+			String query = "SELECT COUNT(*) FROM board ";
 			//추후 구현
-			//if(pageObject.getWord()!=null && !pageObject.getWord().equals(""))
-				
+			if(pageObject.getWord()!=null && !pageObject.getWord().equals(""))
+				query += search(pageObject);
+			System.out.println("BoardDAO.getTotalRow().sql - " + query);
+			
 			pstmt = conn.prepareStatement(query);
+			int idx=1;
+			//조건이 있는 경우 데이터 세팅을 해야한다
+			idx = searchSetData(pageObject,pstmt,idx);
+			System.out.println("idx : " + idx);
 			rs = pstmt.executeQuery();
 			
 			// 4.결과처리
@@ -317,5 +341,59 @@ public class BoardDaoImpl implements BoardDao {
 
 		}
 		return cnt;
+	}
+	public String search(PageObject pageObject) {
+		String condition = "";
+		if(pageObject.getWord()!=null && !pageObject.getWord().equals("")) {
+			if(pageObject.getKey().indexOf("title")!=-1)
+				condition += " WHERE 1 = 0 OR title LIKE ? ";
+			if(pageObject.getKey().indexOf("content")!=-1)
+				condition += " WHERE 1 = 0 OR content LIKE ? ";
+			if(pageObject.getKey().indexOf("name")!=-1)
+				condition += " b,users u\r\n"
+						+ "WHERE b.user_no = u.no AND u.name LIKE ? ";
+			if(pageObject.getKey().indexOf("reg_date")!=-1)
+				condition += "  WHERE 1 = 0 OR TO_CHAR(reg_date,'YYYY-MM-DD') LIKE ? ";
+		}
+		return condition;
+	}
+	public int searchSetData(PageObject pageObject, PreparedStatement pstmt, int idx) throws SQLException{
+		String word = pageObject.getWord();
+		if(word!=null&&!word.equals("")) {
+			if(pageObject.getKey().indexOf("title")!=-1)
+				pstmt.setString(idx++, "%" + word + "%");
+			if(pageObject.getKey().indexOf("content")!=-1)
+				pstmt.setString(idx++, "%" + word + "%");
+			if(pageObject.getKey().indexOf("name")!=-1)
+				pstmt.setString(idx++, "%" + word + "%");
+			if(pageObject.getKey().indexOf("reg_date")!=-1)
+				pstmt.setString(idx++, "%" + word + "%");
+		}
+		
+		return idx;
+	}
+	public int increase(int no) {
+		int result = 0;
+		Connection conn = null;	
+		PreparedStatement pstmt = null;
+		try {
+			conn = getConnection();
+			// 3. SQL문 준비 / 바인딩 / 실행
+			String query ="UPDATE board SET hit = hit+1  WHERE no = ?";
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, no);
+			result = pstmt.executeUpdate();
+		}  catch (SQLException e) {
+			System.out.println("error:" + e);
+		} finally {
+			try {
+				if (pstmt != null) pstmt.close();
+				if (conn != null) conn.close();
+			} catch (SQLException e) {
+				System.out.println("error:" + e);
+			}
+		}
+		
+		return result;
 	}
 }
